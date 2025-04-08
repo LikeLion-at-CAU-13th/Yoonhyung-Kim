@@ -7,7 +7,7 @@ from .models import *
 # Create your views here.
 
 @require_http_methods(["GET"])
-def get_category_detail(reqeust, id):
+def get_category_detail(request, id):
     category = get_object_or_404(Category, pk=id)
     category_detail_json = {
         "id" : category.id,
@@ -16,3 +16,5 @@ def get_category_detail(reqeust, id):
     return JsonResponse({
         "status" : 200,
         "data": category_detail_json})
+
+
