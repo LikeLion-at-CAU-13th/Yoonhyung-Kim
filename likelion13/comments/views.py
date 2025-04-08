@@ -24,18 +24,17 @@ def get_comment_detail(reqeust, id):
 @require_http_methods(["GET"])
 def comment_list(request, post_id):
     post = get_object_or_404(Comment,pk=post_id)
-    comment_all = Comment.objects.all()
+    comments = Comment.objects.filter(post=post)
     comment_json_all = []
 
-    for comment in comment_all:
+    for comment in comments:
         comment_json = {
             "id": comment.id,
             "post": comment.post.id,
             "author": comment.author,
             "content": comment.content,
         }
-        if post_id == comment.post.id:
-            comment_json_all.append(comment_json)
+        comment_json_all.append(comment_json)
 
     return JsonResponse({
             'status': 200,
