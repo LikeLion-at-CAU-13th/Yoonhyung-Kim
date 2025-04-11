@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 # 파일을 읽기 위해 필요한 라이브러리를 설치합니다.
 from pathlib import Path
-import os, json
+import os, json, logging
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -71,6 +71,7 @@ INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', # 반드시 가장 위쪽에 추가
+    'config.logging_middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -167,3 +168,46 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+
+LOGGING = {
+    'version': 1, #항상 1로 고정
+    'disable_existing_loggers': False,
+
+    'formatters': { #로그 형식 지정
+        'verbose': {
+            'format': '[{asctime}] {levelname} {message} (URL: {url})',
+            'style': '{',
+        },
+    },
+
+    'filters': { #warning이상 에러 필터링
+        'warning_or_above': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: record.levelno >= logging.WARNING
+        }
+    },
+
+    'handlers': { #로그를 구분해서 저장
+        'file_general': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'requests.log'),
+            'formatter': 'verbose',
+            'encoding' : 'utf-8',
+        },
+        'file_errors': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'errors.log'),
+            'formatter': 'verbose',
+            'encoding' : 'utf-8',
+            'filters': ['warning_or_above'],
+        },
+    },
+
+    'loggers': {
+        'django.request': {
+            'handlers': ['file_general', 'file_errors'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

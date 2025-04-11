@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods # 추가
 from .models import * # 추가
 import json
+import logging
 
 # Create your views here.
 
@@ -155,3 +156,14 @@ def post_list_by_category(request, category_id):
         'message': '카테고리별 게시글 목록 조회 성공',
         'data': post_json_all
     })
+
+
+#에러처리 되는지 테스트
+logger = logging.getLogger('django.request')  # settings.py에 설정한 로거 이름
+
+def test_log_view(request):
+    logger.info("INFO 테스트입니다", extra={'url': request.path})     
+    logger.warning("WARNING 테스트입니다", extra={'url': request.path})   
+    logger.error("ERROR 테스트입니다", extra={'url': request.path})         
+
+    return JsonResponse({"message": "로그 테스트 완료"})
