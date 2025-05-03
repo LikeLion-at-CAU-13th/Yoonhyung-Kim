@@ -23,6 +23,6 @@ from comments.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('post/', include('posts.urls')),
-    path('comments/',include('comments.urls')),
+    path('comment/',include('comments.urls')),
     path('category/',include('category.urls')),
 ]
