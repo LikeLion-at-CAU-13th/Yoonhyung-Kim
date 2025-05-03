@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 # 파일을 읽기 위해 필요한 라이브러리를 설치합니다.
 from pathlib import Path
-import os, json
+import os, json, logging
 from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,7 +41,7 @@ SECRET_KEY = get_secret("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -62,14 +62,16 @@ PROJECT_APPS = [
     'category',
 ]
 
-THIRD_PARTY_APPS = [
-
+THIRD_PARTY_APPS = [ 
+    "corsheaders",
 ]
 
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # 반드시 가장 위쪽에 추가
+    'config.logging_middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -153,3 +155,59 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# 인증 관련 요청(쿠키, 세션 등)을 허용
+# 예를 들어 브라우저가 백엔드 서버로 쿠키를 전송하거나, 백엔드에서 쿠키를 응답으로 보낼 수 있음
+CORS_ALLOW_CREDENTIALS = True
+
+# 서버로 요청 보낼 수 있는 도메인들 정의
+# 여기에서의 localhost는 EC2 인스턴스의 로컬환경이 아니라 프론트엔드 개발 로컬 환경 의미
+# 3000 포트는 프론트엔드 React 애플리케이션의 포트 번호
+# 추후 프론트엔드에서 웹 페이지 배포 후 도메인 매핑했다면 해당 도메인 추가 필요
+CORS_ALLOWED_ORIGINS = [ 
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+LOGGING = {
+    'version': 1, #항상 1로 고정
+    'disable_existing_loggers': False,
+
+    'formatters': { #로그 형식 지정
+        'verbose': {
+            'format': '[{asctime}] {levelname} {message} (URL: {url})',
+            'style': '{',
+        },
+    },
+
+    'filters': { #warning이상 에러 필터링
+        'warning_or_above': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': lambda record: record.levelno >= logging.WARNING
+        }
+    },
+
+    'handlers': { #로그를 구분해서 저장
+        'file_general': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'requests.log'),
+            'formatter': 'verbose',
+            'encoding' : 'utf-8',
+        },
+        'file_errors': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'errors.log'),
+            'formatter': 'verbose',
+            'encoding' : 'utf-8',
+            'filters': ['warning_or_above'],
+        },
+    },
+
+    'loggers': {
+        'django.request': {
+            'handlers': ['file_general', 'file_errors'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
