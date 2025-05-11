@@ -7,12 +7,17 @@ import json
 import logging
 
 from .serializers import PostSerializer
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 # APIView를 사용하기 위해 import
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
+from config.permission import TimePermission
+from config.permission import CombinedPermission
+
+
 
 # Create your views here.
 
@@ -177,6 +182,7 @@ def test_log_view(request):
     return JsonResponse({"message": "로그 테스트 완료"})
 
 class PostList(APIView):
+    permission_classes = [TimePermission]
     def post(self, request, format=None):
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
@@ -191,6 +197,7 @@ class PostList(APIView):
         return Response(serializer.data)
     
 class PostDetail(APIView):
+    permission_classes = [CombinedPermission]
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
         serializer = PostSerializer(post)
@@ -198,6 +205,7 @@ class PostDetail(APIView):
     
     def put(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
+        self.check_object_permissions(request, post)
         serializer = PostSerializer(post, data=request.data)
         if serializer.is_valid(): # update이니까 유효성 검사 필요
             serializer.save()
@@ -206,6 +214,7 @@ class PostDetail(APIView):
     
     def delete(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
+        self.check_object_permissions(request, post)
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
