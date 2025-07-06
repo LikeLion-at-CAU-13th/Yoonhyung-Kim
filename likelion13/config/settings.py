@@ -15,6 +15,8 @@ from pathlib import Path
 import os, json, logging
 from django.core.exceptions import ImproperlyConfigured
 from datetime import timedelta
+import pymysql
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -72,6 +74,8 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",   
     # "allauth.socialaccount.providers.{제공_업체}" 찾아서 사용 가능
+    'storages',
+    'drf_yasg',  # Swagger
 ]
 
 
@@ -240,3 +244,40 @@ SIMPLE_JWT = {
 # django-allauth 라이브러리에서 사용하는 옵션
 ACCOUNT_LOGIN_METHODS = {'email'}                  # 로그인 방식 설정
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*']    # 회원가입 시 필수 입력 필드 설정
+
+DB_PW = get_secret("DB_PW")
+
+# DATABASES = {
+# 	'default': {
+# 		'ENGINE': 'django.db.backends.mysql',
+# 		'NAME': "likelion13th",
+# 		'USER': "root", # root로 접속하여 DB를 만들었다면 'root'
+# 		'PASSWORD': DB_PW, # 비밀번호는 secrets.json에 저장
+# 		'HOST': 'localhost',
+# 		'PORT': '3306',
+# 	}
+# }
+
+# 원격 연결용
+DATABASES = {
+	'default': {
+		'ENGINE': 'django.db.backends.mysql',
+		'NAME': "likelion13th",
+		'USER': "admin", # aws에서 만든 사용자명
+		'PASSWORD': DB_PW, # 비밀번호는 secrets.json에 저장
+		'HOST': "127.0.0.1",
+		'PORT': '3307', # 터널에서 연결할 로컬 포트
+	}
+}
+
+###AWS###
+AWS_ACCESS_KEY_ID = get_secret("AWS_ACCESS_KEY_ID") # .csv 파일에 있는 내용을 입력 Access key ID. IAM 계정 관련
+AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY") # .csv 파일에 있는 내용을 입력 Secret access key. IAM 계정 관련
+AWS_REGION = 'ap-northeast-2'
+
+###S3###
+AWS_STORAGE_BUCKET_NAME = 'likelion-13th'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
