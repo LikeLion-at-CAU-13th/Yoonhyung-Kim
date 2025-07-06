@@ -3,7 +3,8 @@
 from rest_framework import serializers
 from .models import Post
 from .models import Image
-from config.custom_api_exceptions import PostConflictException
+from config.custom_api_exceptions import PostConflictException, DailyPostNumLimitException
+from datetime import date
 
 class PostSerializer(serializers.ModelSerializer):
 
@@ -19,6 +20,11 @@ class PostSerializer(serializers.ModelSerializer):
     if Post.objects.filter(title=data['title']).exists():
       raise PostConflictException(detail=f"A post with title: '{data['title']}' already exists.")
     
+    day = date.today()
+    writer = data.get('user')
+    if Post.objects.filter(user=writer, created__date = day).exists():
+       raise DailyPostNumLimitException("Only one post each day")
+
     return data
 
 class ImageSerializer(serializers.ModelSerializer):

@@ -22,3 +22,8 @@ class ConflictException(BaseCustomAPIException):
 class PostConflictException(ConflictException):
     default_detail = "A conflict occurred with the post."
     default_code = "POST-CONFLICT"
+
+class DailyPostNumLimitException(BaseCustomAPIException):
+    status_code = 429
+    default_detail = "Daily Post Num Limit is Full."
+    default_code = "DAILY-POST-NUM-LIMIT"

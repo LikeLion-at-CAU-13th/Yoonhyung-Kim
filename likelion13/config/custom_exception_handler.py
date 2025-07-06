@@ -12,7 +12,7 @@ def custom_exception_handler(exc, context):
 def _create_unified_response(response):
     error_detail = _extract_error_detail(response.data)
 
-    return {
+    error_response = {
         'success': False,
         'error': {
             'code': error_detail.get('code', 'DRF-API-ERROR'),
@@ -20,6 +20,13 @@ def _create_unified_response(response):
             'status_code': response.status_code,
         }
     }
+    if 'errors' in error_detail:
+        error_response['error']['errors'] = error_detail['errors']
+    if 'feild_details' in error_detail:
+        error_response['error']['field_details'] = error_detail['feild_details']
+
+    return error_response
+
 
 def _extract_error_detail(error_data):
     print(f"Extracting error detail from: {error_data}")

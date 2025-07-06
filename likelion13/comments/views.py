@@ -55,6 +55,15 @@ class CommentList(APIView):
         comments = Comment.objects.filter(id=post_id)
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
+    def post(self, request, post_id):
+        data = request.data.copy()
+        data["post"] = post_id  # 댓글이 어떤 게시글에 속해 있는지 지정
+
+        serializer = CommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CommentDetail(APIView):
     def get(self, request, post_id,comment_id):
