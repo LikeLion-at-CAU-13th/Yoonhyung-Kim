@@ -26,12 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-secret_file = os.path.join(BASE_DIR, 'secrets.json') 
+secret_file = os.path.join(BASE_DIR, 'secrets.json')
 
 with open(secret_file) as f:
     secrets = json.loads(f.read())
 
-def get_secret(setting, secrets=secrets): 
+def get_secret(setting, secrets=secrets):
 # secret 변수를 가져오거나 그렇지 못 하면 예외를 반환
     try:
         return secrets[setting]
@@ -65,14 +65,14 @@ PROJECT_APPS = [
     'category',
 ]
 
-THIRD_PARTY_APPS = [ 
+THIRD_PARTY_APPS = [
     "corsheaders",
     "rest_framework",
     'rest_framework_simplejwt',
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",   
+    "allauth.socialaccount.providers.google",
     # "allauth.socialaccount.providers.{제공_업체}" 찾아서 사용 가능
     'storages',
     'drf_yasg',  # Swagger
@@ -91,7 +91,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "allauth.account.middleware.AccountMiddleware", 
+    "allauth.account.middleware.AccountMiddleware",
+    "config.middlewares.ExceptionHandlerMiddleware",  # 커스텀 예외 처리 미들웨어 추가
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -177,7 +178,7 @@ CORS_ALLOW_CREDENTIALS = True
 # 여기에서의 localhost는 EC2 인스턴스의 로컬환경이 아니라 프론트엔드 개발 로컬 환경 의미
 # 3000 포트는 프론트엔드 React 애플리케이션의 포트 번호
 # 추후 프론트엔드에서 웹 페이지 배포 후 도메인 매핑했다면 해당 도메인 추가 필요
-CORS_ALLOWED_ORIGINS = [ 
+CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
@@ -229,13 +230,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # 커스텀 예외 처리 함수 지정
+    'EXCEPTION_HANDLER': 'config.custom_exception_handler.custom_exception_handler',
 }
 
 REST_USE_JWT = True
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),    # 유효기간 3시간
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # 유효기간 7일
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1000),    # 유효기간 3시간
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1000),    # 유효기간 7일
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
     'TOKEN_USER_CLASS': 'accounts.User',
@@ -246,29 +249,30 @@ ACCOUNT_LOGIN_METHODS = {'email'}                  # 로그인 방식 설정
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*']    # 회원가입 시 필수 입력 필드 설정
 
 DB_PW = get_secret("DB_PW")
+LOCAL_DB_PW = get_secret("LOCAL_DB_PW")
 
-# DATABASES = {
-# 	'default': {
-# 		'ENGINE': 'django.db.backends.mysql',
-# 		'NAME': "likelion13th",
-# 		'USER': "root", # root로 접속하여 DB를 만들었다면 'root'
-# 		'PASSWORD': DB_PW, # 비밀번호는 secrets.json에 저장
-# 		'HOST': 'localhost',
-# 		'PORT': '3306',
-# 	}
-# }
-
-# 원격 연결용
 DATABASES = {
 	'default': {
 		'ENGINE': 'django.db.backends.mysql',
 		'NAME': "likelion13th",
-		'USER': "admin", # aws에서 만든 사용자명
-		'PASSWORD': DB_PW, # 비밀번호는 secrets.json에 저장
-		'HOST': "127.0.0.1",
-		'PORT': '3307', # 터널에서 연결할 로컬 포트
+		'USER': "root", # root로 접속하여 DB를 만들었다면 'root'
+		'PASSWORD': LOCAL_DB_PW, # 비밀번호는 secrets.json에 저장
+		'HOST': 'localhost',
+		'PORT': '3306',
 	}
 }
+
+# 원격 연결용
+# DATABASES = {
+# 	'default': {
+# 		'ENGINE': 'django.db.backends.mysql',
+# 		'NAME': "likelion13th",
+# 		'USER': "admin", # aws에서 만든 사용자명
+# 		'PASSWORD': DB_PW, # 비밀번호는 secrets.json에 저장
+# 		'HOST': "127.0.0.1",
+# 		'PORT': '3307', # 터널에서 연결할 로컬 포트
+# 	}
+# }
 
 ###AWS###
 AWS_ACCESS_KEY_ID = get_secret("AWS_ACCESS_KEY_ID") # .csv 파일에 있는 내용을 입력 Access key ID. IAM 계정 관련

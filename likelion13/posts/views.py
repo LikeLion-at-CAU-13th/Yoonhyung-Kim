@@ -26,7 +26,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import uuid
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from config.custom_exceptions import *
 
 # Create your views here.
 
@@ -94,7 +94,25 @@ def post_list(request):
             'data': post_json_all
         })
     
-    
+#14주차 예외처리 세션용
+@require_http_methods(["GET"])
+def get_post_detail(reqeust, id):
+    try:
+        post = Post.objects.get(id=id)
+        post_detail_json = {
+            "id" : post.id,
+            "title" : post.title,
+            "content" : post.content,
+            "status" : post.status,
+            "user" : post.user.username
+        }
+        return JsonResponse({
+            "status" : 200,
+            "data": post_detail_json})
+    except Post.DoesNotExist:
+        raise PostNotFoundException
+
+
 @require_http_methods(["GET", "PATCH", "DELETE"])
 def post_detail(request, post_id):
 
@@ -199,10 +217,10 @@ class PostList(APIView):
     )
     def post(self, request, format=None):
         serializer = PostSerializer(data=request.data)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @swagger_auto_schema(
         operation_summary="게시글 목록 조회",
